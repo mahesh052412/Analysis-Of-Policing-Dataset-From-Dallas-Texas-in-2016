@@ -57,3 +57,49 @@ proj_dallas <- proj_dallas %>%
 #Remove unwanted column
 proj_dallas <- proj_dallas[,-c(25:27,30,31,36), drop = FALSE]
 
+#Displaying Arrest of subjects in Dallas
+location_data <- proj_dallas %>%
+  filter(!is.na(LOCATION_LATITUDE), SUBJECT_WAS_ARRESTED == "Yes") %>%
+  group_by(SUBJECT_ID, LOCATION_LATITUDE, LOCATION_LONGITUDE, LOCATION_DISTRICT) %>%
+  summarise(count = n()) %>%
+  filter(SUBJECT_ID != 0, LOCATION_DISTRICT != "NULL")
+
+my_loc_palette <- colorFactor(palette = viridis(7),
+                              domain = location_data$LOCATION_DISTRICT,
+                              na.color = "transparent")
+
+leaflet(location_data) %>%
+  setView(lng = -96.808891, lat = 32.779167, zoom = 10) %>%
+  addProviderTiles(providers$Stamen.TonerLite) %>%
+  addCircleMarkers(
+    lng = ~LOCATION_LONGITUDE,
+    lat = ~LOCATION_LATITUDE,
+    fillColor = ~my_loc_palette(location_data$LOCATION_DISTRICT),
+    fillOpacity = 0.8,
+    color="white",
+    radius=8,
+    stroke=F,
+    label=~paste("Arrested: ", count),
+    popup=~paste("Arrested: ", count, "\nLOCATION_DISTRICT: ", LOCATION_DISTRICT)
+  ) %>%
+  addLegend(pal=my_loc_palette, values = ~LOCATION_DISTRICT, title = "Regions", 
+            position = "bottomleft",
+            opacity = 1)
+
+  
+#Count of highest Arrest by Divison
+proj_dallas %>% select(SUBJECT_WAS_ARRESTED, DIVISION) %>%
+  filter(SUBJECT_WAS_ARRESTED == "Yes") %>%
+  group_by(DIVISION) %>% count() %>%
+  ggplot(aes(x = DIVISION, y = n)) +
+  geom_histogram(stat = "identity", fill = "violet")
+
+#which month has highest robbery
+proj_dallas %>% select(INCIDENT_DATE, SUBJECT_WAS_ARRESTED) %>%
+  filter(SUBJECT_WAS_ARRESTED == "Yes") %>%
+  mutate(month = format(INCIDENT_DATE, "%m")) %>%
+  group_by(month) %>%
+  summarise(count_arrest = n()) %>%
+  ggplot(aes(x = month, y=count_arrest)) +
+  geom_col(fill = "orange")
+
