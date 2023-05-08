@@ -103,3 +103,48 @@ proj_dallas %>% select(INCIDENT_DATE, SUBJECT_WAS_ARRESTED) %>%
   ggplot(aes(x = month, y=count_arrest)) +
   geom_col(fill = "orange")
 
+#count of officers injuried
+officers_injuried <- proj_dallas %>% select(OFFICER_GENDER, OFFICER_HOSPITALIZATION) %>%
+  group_by(OFFICER_GENDER, OFFICER_HOSPITALIZATION) %>% count() %>%
+  pivot_wider(names_from = OFFICER_HOSPITALIZATION, values_from = n)
+officers_injuried
+
+#minor and major injuries
+proj_dallas %>% select(OFFICER_GENDER, OFFICER_INJURY_TYPE,OFFICER_HOSPITALIZATION) %>%
+  filter(OFFICER_INJURY_TYPE != "No injuries noted or visible" &
+           OFFICER_HOSPITALIZATION == "Yes") %>%
+  group_by(OFFICER_GENDER) %>% count() %>%
+  ggplot(aes(x = "", y = n, fill = OFFICER_GENDER)) +
+  geom_bar(stat = "identity", width = 1) +
+  geom_text(aes(label = paste(round((n/sum(n))*100, 2), "%")),
+            position = position_stack(vjust = 0.5)) +
+  coord_polar("y", start = 0)+
+  theme_void()
+
+#how many and which year who has joined more
+proj_dallas %>%
+  mutate(year = format(OFFICER_HIRE_DATE, "%Y")) %>%
+  group_by(year) %>%
+  count() %>%
+  ggplot(aes(x = year, y = n, group = "red")) +
+  geom_line(aes(color = "red")) +
+  geom_point(aes(color = "red")) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+#people of different race joining force
+proj_dallas %>% select(OFFICER_ID, OFFICER_RACE, OFFICER_HIRE_DATE) %>%
+  mutate(year = format(OFFICER_HIRE_DATE, "%Y")) %>%
+  group_by(year, OFFICER_RACE) %>%
+  count() %>%
+  ggplot(aes(x = year, y = n)) +
+  geom_col(fill = "turquoise4") +
+  coord_flip() +
+  facet_wrap(vars(OFFICER_RACE), scales = "free") +
+  theme_classic()
+
+#officers years spent on force
+proj_dallas %>% select(OFFICER_ID,OFFICER_YEARS_ON_FORCE) %>%
+  group_by(OFFICER_YEARS_ON_FORCE) %>% count() %>%
+  ggplot(aes(x = OFFICER_YEARS_ON_FORCE, y=n)) +
+  geom_density(stat = "identity", fill = "green")
