@@ -148,3 +148,38 @@ proj_dallas %>% select(OFFICER_ID,OFFICER_YEARS_ON_FORCE) %>%
   group_by(OFFICER_YEARS_ON_FORCE) %>% count() %>%
   ggplot(aes(x = OFFICER_YEARS_ON_FORCE, y=n)) +
   geom_density(stat = "identity", fill = "green")
+
+#boxplot
+proj_dallas %>% group_by(OFFICER_RACE, OFFICER_YEARS_ON_FORCE) %>%
+  ggplot(aes(x = OFFICER_RACE, y = OFFICER_YEARS_ON_FORCE, fill = OFFICER_RACE)) +
+  geom_boxplot(show.legend = FALSE)
+
+#correlation
+df1 <- proj_dallas %>%
+  group_by(OFFICER_ID, TYPE_OF_FORCE) %>%
+  summarise(count = n()) %>%
+  select(c("OFFICER_ID", "count")) %>%
+  filter(OFFICER_ID != 0)
+
+df1 <- df1[!duplicated(df1), ]
+
+df1 <- df1 %>%
+  group_by(OFFICER_ID) %>%
+  summarise(total = sum(count)) %>%
+  arrange(OFFICER_ID) %>%
+  select(total)
+
+corr_force_officer <- cbind(df1,
+                            proj_dallas %>%
+                              select(c(OFFICER_ID, OFFICER_YEARS_ON_FORCE)) %>%
+                              group_by(OFFICER_ID) %>%
+                              slice(1) %>%
+                              ungroup %>%
+                              filter(OFFICER_ID != 0)
+)
+
+cor_graph <- corr_force_officer %>% ggplot(aes(x = total, y = OFFICER_YEARS_ON_FORCE)) +
+  geom_point(color = "pink") +
+  geom_smooth()
+
+ggplotly(cor_graph)
